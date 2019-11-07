@@ -1,0 +1,60 @@
+我干了些社么：
+
+学习pytorch:
+	
+	
+	按照书上的指示，实现DogvsCat的ResNet模型
+		敲代码
+		安装相关的环境
+		下载数据
+		调试
+		浏览GitHub找寻问题
+
+实现ATAE-LSTM:
+	读论文 进一步理解LSTM以及ATAE-LSTM的工作原理
+		查看帮助文档，学习使用nn.LSTM
+	实现dataset类
+		敲代码
+		word embedding:
+			下载论文中使用的GloVe的pre-trained
+			打开部分文件 分析文本结构 定义函数将其转换为字典
+			安装使用nltk用于分词
+		dataset:
+			下载论文中使用的数据集 SemEval 2014 Task
+			打开trial文件 分析文本结构
+			使用xml.etree提取数据 转换为sentence-term-polarity的三元组
+	实现module:
+			学习Xavier Initialization的概念
+			找寻自定义初始化LSTM各个参数的方法
+			
+			实现ATAE-LSTM类 主要包括 init函数 和 forward函数
+			debug完成:
+				Dataset对象后于ATAE-LSTM对象构造，使得ATAE-LSTM对象中的embedding层只含有一层(自动生成的default层)
+				forward中，输入输出Tensor形状与原意不一
+				softmax函数，未声明参数dim，默认按照第一维度进行运算
+				projection parameters声明的时候形状定义错误，加上view(X,Y,Z)解决
+				embedding层输入数据类型为float，实际应输入整数，但声明tensor变量时并不能（像numpy一样）直接指定数据类型，最后调用torch.Tensor.Long()解决
+				
+				model.parameter中没用自定义的参数，例如LSTM的两个隐藏元的初始值，最终通过将这些参数使用torch.nn.Parameter封装解决
+				论文中所述标准LSTM含有Wi,bi,Wf,bf,Wo,bo,Wc,bc,Ws,bs共十个参数，但model.parameter中只含有四个参数，通过查阅相关文档得知，四个参数实则是多个参数的合并
+					Variables:
+						weight_ih_l[k] – the learnable input-hidden weights of the kth layer (W_ii|W_if|W_ig|W_io), of shape (4*hidden_size x input_size)
+						weight_hh_l[k] – the learnable hidden-hidden weights of the kth layer (W_hi|W_hf|W_hg|W_ho), of shape (4*hidden_size x hidden_size)
+						bias_ih_l[k] – the learnable input-hidden bias of the kth layer (b_ii|b_if|b_ig|b_io), of shape (4*hidden_size)
+						bias_hh_l[k] – the learnable hidden-hidden bias of the kth layer (b_hi|b_hf|b_hg|b_ho), of shape (4*hidden_size)
+				未找到CrossEntrophy定义L2 - regularization的地方，查询相关文档后了解到它已经被加入到了绝大多数的优化器中（如此论文中使用的Adagrad），又名weight_decay
+				can't optimize a non-leaf Tensor
+					排除模型中的各个parameter最终发现是embedding层的weight为 non-leaf Tensor
+					插桩测试得知是手动为weight赋值后导致 weight.is_leaf == False
+					最后查阅文档得知，可以使用nn.Embedding.from_pretrained实现自定义初始化
+			
+			将dataset类型中的label由单个数字(index of class)改成了one-hot编码，以便进行CrossEntrophy
+			查阅文档了解了model.eval()的用途
+			查阅文档了解到meter.ConfusionMeter的输入既可以是index of class（如猫狗二分类可以输入 0，1），也可以是one-hot（如此模型中表示分类结果的三维向量）
+			
+			解决了DataLoader开始的一系列 minibatch 的问题
+阅读更多的论文:
+	IAN
+	Deep-Memory-Network
+	AOA-for-Aspect
+	AOA-for-Comprehension
